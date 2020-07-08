@@ -1,19 +1,11 @@
+local anim = require("lib/animation")
+
 framerate = 0
 
 char = { pos_x = 100, pos_y = 400-64, isThrusting = false, vel_x = 0, vel_y = 0} 
-fireAnim = {path="assets/fire.png", curFrame = 1, fps = 5, totalframes = 2, 
-    framewidth = 16, frameheight = 16}
 
--- Helper function for loading animations
--- with images on a horizontal grid
-function loadAnimation(anim)
-	anim.image = love.graphics.newImage(anim.path)	
-		
-	anim.frames = {}
-	for i = 0,(anim.totalframes - 1) do
-		table.insert(anim.frames, love.graphics.newQuad(i*anim.framewidth,0, anim.framewidth, anim.frameheight, anim.image:getWidth(), anim.image:getHeight()))
-	end
-end		
+local fireAnim = {path="assets/fire.png", curFrame = 1, fps = 5, totalframes = 2, 
+    framewidth = 16, frameheight = 16}
 
 function love.load()
 	love.window.setMode(640,480)
@@ -21,7 +13,7 @@ function love.load()
 
 	characterImage = love.graphics.newImage("assets/rocket.png")
 
-	loadAnimation(fireAnim)
+	anim.newAnimation("fireAnim",fireAnim)
 
 end
 
@@ -72,11 +64,7 @@ function love.update(dt)
 			char.pos_x = 640+64
 	end		
 
-	fireAnim.curFrame = fireAnim.curFrame + dt*fireAnim.fps
-
-	if fireAnim.curFrame > 3  then
-		fireAnim.curFrame = 1
-	end		
+	anim.updateAllAnimations(dt)
 
 end
 
