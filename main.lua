@@ -1,100 +1,107 @@
-local anim = require("lib/animation")
+AnimLib = require("lib/animation")
 
-local framerate = 0
+G_Framerate = 0
+
+G_CharacterHeight = 64
+G_GroundLevel = 400
+
+G_StartHeight = 400 - 64
 
 -- State of the rocket
-local char = { pos_x = 100, pos_y = 400-64, isThrusting = false, vel_x = 0, vel_y = 0} 
+G_Character = { pos_x = 100, pos_y = G_StartHeight, isThrusting = false, vel_x = 0, vel_y = 0} 
 
-local fireAnim = {path="assets/fire.png", curFrame = 1, fps = 5, totalframes = 2, 
-    framewidth = 16, frameheight = 16}
+G_FireAnimation = {path="assets/fire.png", curFrame = 1, fps = 5,
+                   totalframes = 2, framewidth = 16, frameheight = 16}
 
-local characterImage = love.graphics.newImage("assets/rocket.png")
+G_CharacterImage = love.graphics.newImage("assets/rocket.png")
 
 function love.load()
     love.window.setMode(640,480)
     love.graphics.setBackgroundColor(19/255, 20/255, 68/255)
 
-    anim.newAnimation("fireAnim",fireAnim)
+    AnimLib.newAnimation("fireAnim", G_FireAnimation)
 end
 
 -- love.update is given the timestep since the last update in seconds
 -- love.timer.getFPS is also available
 function love.update(dt)
-    framerate = 1/dt	
+    G_Framerate = 1/dt	
 
     -- there are also callback functions that are called on key-presses
-    char.isThrusting = love.keyboard.isDown("space")
+    G_Character.isThrusting = love.keyboard.isDown("space")
 
     -- Physics
-    char.pos_x = char.pos_x + char.vel_x * dt
-    char.pos_y = char.pos_y + char.vel_y * dt
+    G_Character.pos_x = G_Character.pos_x + G_Character.vel_x * dt
+    G_Character.pos_y = G_Character.pos_y + G_Character.vel_y * dt
 
     local g = -100
 
-    char.vel_y = char.vel_y - g*dt
+    G_Character.vel_y = G_Character.vel_y - g*dt
 
     -- Controls
-    if char.isThrusting then
-            char.vel_y = char.vel_y + 2*g*dt
+    if G_Character.isThrusting then
+            G_Character.vel_y = G_Character.vel_y + 2*g*dt
     end
 
-    if love.keyboard.isDown("right") and char.pos_y ~= 400-64 then
-        char.vel_x = char.vel_x + 5
+    if love.keyboard.isDown("right") and G_Character.pos_y ~= 400-64 then
+        G_Character.vel_x = G_Character.vel_x + 5
     end		
 
-    if love.keyboard.isDown("left") and char.pos_y ~= 400-64 then
-        char.vel_x = char.vel_x - 5
+    if love.keyboard.isDown("left") and G_Character.pos_y ~= 400-64 then
+        G_Character.vel_x = G_Character.vel_x - 5
     end	
 
     -- More physics
-    char.pos_x = char.pos_x + char.vel_x*dt
-    char.pos_y = char.pos_y + char.vel_y*dt
+    G_Character.pos_x = G_Character.pos_x + G_Character.vel_x*dt
+    G_Character.pos_y = G_Character.pos_y + G_Character.vel_y*dt
 
-    if char.pos_y > 400-64 then
-        char.pos_y = 400-64
-        char.vel_y = 0
+    if G_Character.pos_y > 400-64 then
+        G_Character.pos_y = 400-64
+        G_Character.vel_y = 0
     end
 
-    if char.pos_y == 400-64 then
-        char.vel_x = char.vel_x * 0.95
+    if G_Character.pos_y == 400-64 then
+        G_Character.vel_x = G_Character.vel_x * 0.95
     end
 
-    if char.pos_x > 640+64 then
-        char.pos_x = -64
+    if G_Character.pos_x > 640+64 then
+        G_Character.pos_x = -64
     end		
 
-    if char.pos_x < -64 then
-            char.pos_x = 640+64
+    if G_Character.pos_x < -64 then
+            G_Character.pos_x = 640+64
     end		
 
     -- Updates all animations
-    anim.updateAllAnimations(dt)
+    AnimLib.updateAllAnimations(dt)
 
 end
 
-function love.draw()
-
-    -- Changes the background color
+function ChangeBackgroundColor(char, love)
     if char.pos_y < -500 then
         love.graphics.setBackgroundColor(19/255, 20/255, 68/255)
     else
         local r = (char.pos_y + 500)/(500+400-64)
         love.graphics.setBackgroundColor((1+2*r)*19/255, (1+2*r)*20/255, (1+2*r)*68/255)
     end
+end
+
+function love.draw()
+    ChangeBackgroundColor(G_Character, love)
 
     -- Translates the coordinates, as if we would have a moving camera
-    love.graphics.translate(0, -char.pos_y + 400-64)
+    love.graphics.translate(0, G_StartHeight - G_Character.pos_y)
 
     -- Draws the rocket
-    love.graphics.draw(characterImage, char.pos_x, char.pos_y)
+    love.graphics.draw(G_CharacterImage, G_Character.pos_x, G_Character.pos_y)
 
     -- The first argument is DrawMode, the other possibility is "line"
     -- for outlined shapes
     love.graphics.rectangle("fill", 0, 400 , 640, 80)
 
     -- Fire exhaust
-    if char.isThrusting then
-        love.graphics.draw(fireAnim.image, fireAnim.frames[math.floor(fireAnim.curFrame)], char.pos_x + 32 - 8, char.pos_y + 64 - 8)
+    if G_Character.isThrusting then
+        love.graphics.draw(G_FireAnimation.image, G_FireAnimation.frames[math.floor(G_FireAnimation.curFrame)], G_Character.pos_x + 32 - 8, G_Character.pos_y + 64 - 8)
     end
 
     -- This resets the translation above
@@ -104,6 +111,6 @@ function love.draw()
     -- Coloured text, love.graphics.printf is available for formatted text	
     -- To round a number x with a precision delta_x do:
     -- math.floor(x + delta_x / 2)
-    love.graphics.print({{1,0,0,1},math.floor(framerate+0.5)}, 0, 0)
+    love.graphics.print({{1,0,0,1},math.floor(G_Framerate+0.5)}, 0, 0)
 end
 
