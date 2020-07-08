@@ -3,9 +3,13 @@ AnimLib = require("lib/animation")
 G_Framerate = 0
 
 G_CharacterHeight = 64
-G_GroundLevel = 400
+G_CharacterWidth = 64
 
+G_GroundLevel = 400
 G_StartHeight = 400 - 64
+
+G_ScreenWidth = 640
+G_ScreenHeight = 480
 
 -- State of the rocket
 G_Character = { pos_x = 100, pos_y = G_StartHeight, isThrusting = false, vel_x = 0, vel_y = 0} 
@@ -16,7 +20,7 @@ G_FireAnimation = {path="assets/fire.png", curFrame = 1, fps = 5,
 G_CharacterImage = love.graphics.newImage("assets/rocket.png")
 
 function love.load()
-    love.window.setMode(640,480)
+    love.window.setMode(G_ScreenWidth, G_ScreenHeight)
     love.graphics.setBackgroundColor(19/255, 20/255, 68/255)
 
     AnimLib.newAnimation("fireAnim", G_FireAnimation)
@@ -43,11 +47,11 @@ function love.update(dt)
             G_Character.vel_y = G_Character.vel_y + 2*g*dt
     end
 
-    if love.keyboard.isDown("right") and G_Character.pos_y ~= 400-64 then
+    if love.keyboard.isDown("right") and G_Character.pos_y ~= G_StartHeight then
         G_Character.vel_x = G_Character.vel_x + 5
     end		
 
-    if love.keyboard.isDown("left") and G_Character.pos_y ~= 400-64 then
+    if love.keyboard.isDown("left") and G_Character.pos_y ~= G_StartHeight then
         G_Character.vel_x = G_Character.vel_x - 5
     end	
 
@@ -55,26 +59,24 @@ function love.update(dt)
     G_Character.pos_x = G_Character.pos_x + G_Character.vel_x*dt
     G_Character.pos_y = G_Character.pos_y + G_Character.vel_y*dt
 
-    if G_Character.pos_y > 400-64 then
-        G_Character.pos_y = 400-64
+    if G_Character.pos_y > G_StartHeight then
+        G_Character.pos_y = G_StartHeight
         G_Character.vel_y = 0
     end
 
-    if G_Character.pos_y == 400-64 then
+    if G_Character.pos_y == G_StartHeight then
         G_Character.vel_x = G_Character.vel_x * 0.95
     end
 
-    if G_Character.pos_x > 640+64 then
-        G_Character.pos_x = -64
+    if G_Character.pos_x > G_ScreenWidth + G_CharacterWidth then
+        G_Character.pos_x = -G_CharacterWidth
     end		
 
-    if G_Character.pos_x < -64 then
-            G_Character.pos_x = 640+64
+    if G_Character.pos_x < -G_CharacterWidth then
+            G_Character.pos_x = G_ScreenWidth + G_CharacterWidth
     end		
 
-    -- Updates all animations
     AnimLib.updateAllAnimations(dt)
-
 end
 
 function ChangeBackgroundColor(char, love)
@@ -97,11 +99,13 @@ function love.draw()
 
     -- The first argument is DrawMode, the other possibility is "line"
     -- for outlined shapes
-    love.graphics.rectangle("fill", 0, 400 , 640, 80)
+    love.graphics.rectangle("fill", 0, G_GroundLevel, G_ScreenWidth, 80)
 
     -- Fire exhaust
     if G_Character.isThrusting then
-        love.graphics.draw(G_FireAnimation.image, G_FireAnimation.frames[math.floor(G_FireAnimation.curFrame)], G_Character.pos_x + 32 - 8, G_Character.pos_y + 64 - 8)
+        love.graphics.draw(
+                G_FireAnimation.image, G_FireAnimation.frames[math.floor(G_FireAnimation.curFrame)],
+                G_Character.pos_x + 32 - 8, G_Character.pos_y + 64 - 8)
     end
 
     -- This resets the translation above
