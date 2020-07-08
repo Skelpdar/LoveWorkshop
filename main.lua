@@ -11,19 +11,24 @@ G_StartHeight = 400 - 64
 G_ScreenWidth = 640
 G_ScreenHeight = 480
 
--- State of the rocket
-G_Character = { pos_x = 100, pos_y = G_StartHeight, isThrusting = false, vel_x = 0, vel_y = 0} 
+function CreateFireAnimation(AnimLib)
+    local animation =
+        {path="assets/fire.png", curFrame = 1, fps = 5,
+         totalframes = 2, framewidth = 16, frameheight = 16}
+    
+    AnimLib.newAnimation("fireAnim", animation)
 
-G_FireAnimation = {path="assets/fire.png", curFrame = 1, fps = 5,
-                   totalframes = 2, framewidth = 16, frameheight = 16}
+    return animation
+end
 
-G_CharacterImage = love.graphics.newImage("assets/rocket.png")
+G_Character = 
+        {pos_x = 100, pos_y = G_StartHeight,
+         vel_x = 0, vel_y = 0, image = love.graphics.newImage("assets/rocket.png"),
+         animation = CreateFireAnimation(AnimLib), isThrusting = false} 
 
 function love.load()
     love.window.setMode(G_ScreenWidth, G_ScreenHeight)
     love.graphics.setBackgroundColor(19/255, 20/255, 68/255)
-
-    AnimLib.newAnimation("fireAnim", G_FireAnimation)
 end
 
 -- love.update is given the timestep since the last update in seconds
@@ -79,34 +84,39 @@ function love.update(dt)
     AnimLib.updateAllAnimations(dt)
 end
 
-function ChangeBackgroundColor(char, love)
-    if char.pos_y < -500 then
+function UpdateBackgroundColor(love, characterHeight, startHeight)
+    if characterHeight < -500 then
         love.graphics.setBackgroundColor(19/255, 20/255, 68/255)
     else
-        local r = (char.pos_y + 500)/(500+400-64)
+        local r = (characterHeight + 500) / (500 + startHeight)
         love.graphics.setBackgroundColor((1+2*r)*19/255, (1+2*r)*20/255, (1+2*r)*68/255)
     end
 end
 
+function SetCameraPosition(love, x, y)
+    love.graphics.translate(x, y)
+end
+
+function RenderCharacter(love, character)
+    love.graphics.draw(character.image, character.pos_x, character.pos_y)
+
+    if character.isThrusting then
+        love.graphics.draw(
+                character.animation.image, character.animation.frames[math.floor(character.animation.curFrame)],
+                character.pos_x + 32 - 8, character.pos_y + 64 - 8)
+    end
+end
+
 function love.draw()
-    ChangeBackgroundColor(G_Character, love)
+    UpdateBackgroundColor(love, G_Character.pos_y, G_StartHeight)
 
-    -- Translates the coordinates, as if we would have a moving camera
-    love.graphics.translate(0, G_StartHeight - G_Character.pos_y)
-
-    -- Draws the rocket
-    love.graphics.draw(G_CharacterImage, G_Character.pos_x, G_Character.pos_y)
+    SetCameraPosition(love, 0, G_StartHeight - G_Character.pos_y)
 
     -- The first argument is DrawMode, the other possibility is "line"
     -- for outlined shapes
     love.graphics.rectangle("fill", 0, G_GroundLevel, G_ScreenWidth, 80)
 
-    -- Fire exhaust
-    if G_Character.isThrusting then
-        love.graphics.draw(
-                G_FireAnimation.image, G_FireAnimation.frames[math.floor(G_FireAnimation.curFrame)],
-                G_Character.pos_x + 32 - 8, G_Character.pos_y + 64 - 8)
-    end
+    RenderCharacter(love, G_Character)
 
     -- This resets the translation above
     -- so that we can draw GUI in screen space coordinates
