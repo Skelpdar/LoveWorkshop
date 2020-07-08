@@ -1,15 +1,17 @@
 framerate = 0
 
 char = { pos_x = 100, pos_y = 400-64, isThrusting = false, vel_x = 0, vel_y = 0} 
+fireAnim = {path="assets/fire.png", curFrame = 1, fps = 5, totalframes = 2, 
+    framewidth = 16, frameheight = 16}
 
-fireAnim = {path="assets/fire.png", curFrame = 1, fps = 5, totalframes = 2}
-
+-- Helper function for loading animations
+-- with images on a horizontal grid
 function loadAnimation(anim)
 	anim.image = love.graphics.newImage(anim.path)	
 		
 	anim.frames = {}
 	for i = 0,(anim.totalframes - 1) do
-		table.insert(anim.frames, love.graphics.newQuad(i*16,0, 16, 16, anim.image:getWidth(), anim.image:getHeight()))
+		table.insert(anim.frames, love.graphics.newQuad(i*anim.framewidth,0, anim.framewidth, anim.frameheight, anim.image:getWidth(), anim.image:getHeight()))
 	end
 end		
 
@@ -80,25 +82,36 @@ end
 
 function love.draw()
 
+    -- Changes the background color
+    if char.pos_y < -500 then
+	    love.graphics.setBackgroundColor(19/255, 20/255, 68/255)
+    else
+        local r = (char.pos_y + 500)/(500+400-64)
+        love.graphics.setBackgroundColor((1+2*r)*19/255, (1+2*r)*20/255, (1+2*r)*68/255)
+    end
+
+    -- Translates the coordinates, as if we would have a moving camera
 	love.graphics.translate(0, -char.pos_y + 400-64)
 
+    -- Draws the rocket
 	love.graphics.draw(characterImage, char.pos_x, char.pos_y)
 
 	-- The first argument is DrawMode, the other possibility is "line"
 	-- for outlined shapes
 	love.graphics.rectangle("fill", 0, 400 , 640, 80)
 
-
+    -- Fire exhaust
 	if char.isThrusting then
 		love.graphics.draw(fireAnim.image, fireAnim.frames[math.floor(fireAnim.curFrame)], char.pos_x + 32 - 8, char.pos_y + 64 - 8)
 	end
 
+    -- This resets the translation above
+    -- so that we can draw GUI in screen space coordinates
 	love.graphics.origin()
 
 	-- Coloured text, love.graphics.printf is available for formatted text	
 	-- To round a number x with a precision delta_x do:
 	-- math.floor(x + delta_x / 2)
 	love.graphics.print({{1,0,0,1},math.floor(framerate+0.5)}, 0, 0)
-
 end
 
