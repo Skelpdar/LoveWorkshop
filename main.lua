@@ -2,6 +2,7 @@ local anim = require("lib/animation")
 
 local framerate = 0
 
+-- State of the rocket
 local char = { pos_x = 100, pos_y = 400-64, isThrusting = false, vel_x = 0, vel_y = 0} 
 
 local fireAnim = {path="assets/fire.png", curFrame = 1, fps = 5, totalframes = 2, 
@@ -24,6 +25,7 @@ function love.update(dt)
     -- there are also callback functions that are called on key-presses
     char.isThrusting = love.keyboard.isDown("space")
 
+    -- Physics
     char.pos_x = char.pos_x + char.vel_x * dt
     char.pos_y = char.pos_y + char.vel_y * dt
 
@@ -31,6 +33,7 @@ function love.update(dt)
 
     char.vel_y = char.vel_y - g*dt
 
+    -- Controls
     if char.isThrusting then
             char.vel_y = char.vel_y + 2*g*dt
     end
@@ -43,6 +46,7 @@ function love.update(dt)
         char.vel_x = char.vel_x - 5
     end	
 
+    -- More physics
     char.pos_x = char.pos_x + char.vel_x*dt
     char.pos_y = char.pos_y + char.vel_y*dt
 
@@ -63,6 +67,7 @@ function love.update(dt)
             char.pos_x = 640+64
     end		
 
+    -- Updates all animations
     anim.updateAllAnimations(dt)
 
 end
