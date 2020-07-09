@@ -1,4 +1,5 @@
 AnimLib = require("lib/animation")
+bump = require("lib/bump/bump")
 
 G_Framerate = 0
 
@@ -10,6 +11,8 @@ G_StartHeight = 400 - 64
 
 G_ScreenWidth = 640
 G_ScreenHeight = 480
+
+G_world = bump.newWorld(64)
 
 function CreateFireAnimation(AnimLib)
     local animation =
@@ -26,8 +29,16 @@ G_Rocket =
          vel_x = 0, vel_y = 0, image = love.graphics.newImage("assets/rocket.png"),
          animation = CreateFireAnimation(AnimLib), isThrusting = false} 
 
+G_rocketCollision = {name="rocketCollision"}
+
+G_world:add(G_rocketCollision, G_Rocket.pos_x, G_Rocket.pos_y, G_RocketHeight, G_RocketWidth)
+
+G_groundCollision = {name="groundCollision"}
+
+G_world:add(G_groundCollision, -64, 400, 640+2*64, 80)
+
 function love.load()
-    love.window.setMode(G_ScreenWidth, G_ScreenHeight)
+    love.window.setMode(G_ScreenWidth, G_ScreenHeight, {vsync=-1})
     love.graphics.setBackgroundColor(19/255, 20/255, 68/255)
 end
 
@@ -61,11 +72,15 @@ function love.update(dt)
     end	
 
     -- More physics
-    G_Rocket.pos_x = G_Rocket.pos_x + G_Rocket.vel_x*dt
-    G_Rocket.pos_y = G_Rocket.pos_y + G_Rocket.vel_y*dt
+    local goal_x = G_Rocket.pos_x + G_Rocket.vel_x*dt
+    local goal_y = G_Rocket.pos_y + G_Rocket.vel_y*dt
 
-    if G_Rocket.pos_y > G_StartHeight then
-        G_Rocket.pos_y = G_StartHeight
+    local actualX, actualY, cols, len = G_world:move(G_rocketCollision, goal_x, goal_y)
+
+    G_Rocket.pos_x = actualX
+    G_Rocket.pos_y = actualY 
+
+    if G_Rocket.pos_y < goal_y then
         G_Rocket.vel_y = 0
     end
 
@@ -75,10 +90,12 @@ function love.update(dt)
 
     if G_Rocket.pos_x > G_ScreenWidth + G_RocketWidth then
         G_Rocket.pos_x = -G_RocketWidth
+        G_world:update(G_rocketCollision, G_Rocket.pos_x, G_Rocket.pos_y)
     end		
 
     if G_Rocket.pos_x < -G_RocketWidth then
             G_Rocket.pos_x = G_ScreenWidth + G_RocketWidth
+            G_world:update(G_rocketCollision, G_Rocket.pos_x, G_Rocket.pos_y)
     end		
 
     AnimLib.updateAllAnimations(dt)
@@ -117,6 +134,8 @@ function love.draw()
     love.graphics.rectangle("fill", 0, G_GroundLevel, G_ScreenWidth, 80)
 
     RenderRocket(love, G_Rocket)
+
+    love.graphics.rectangle("line", G_Rocket.pos_x, G_Rocket.pos_y, G_RocketWidth, G_RocketHeight)
 
     -- This resets the translation above
     -- so that we can draw GUI in screen space coordinates
