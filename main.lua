@@ -1,7 +1,10 @@
 AnimLib = require("lib/animation")
 bump = require("lib/bump/bump")
+cron = require("lib/cron/cron")
+MGL = require("lib/MGL/src/MGL")
 
 G_Framerate = 0
+
 
 G_RocketHeight = 64
 G_RocketWidth = 64
@@ -38,6 +41,10 @@ G_groundCollision = {name="groundCollision"}
 G_world:add(G_groundCollision, -64, 400, 640+2*64, 80)
 
 function love.load()
+	-- Creates a timer which calls the callback function every 5 seconds
+	-- there is also cron.after, which only calls the function once
+	G_clock = cron.every(5, (function() print("Five seconds have passed") end))
+
     love.window.setMode(G_ScreenWidth, G_ScreenHeight, {vsync=-1})
     love.graphics.setBackgroundColor(19/255, 20/255, 68/255)
 end
@@ -46,6 +53,9 @@ end
 -- love.timer.getFPS is also available
 function love.update(dt)
     G_Framerate = 1/dt	
+
+	-- All clocks need to be updated manually
+	G_clock:update(dt)
 
     -- there are also callback functions that are called on key-presses
     G_Rocket.isThrusting = love.keyboard.isDown("space")
@@ -75,6 +85,7 @@ function love.update(dt)
     local goal_x = G_Rocket.pos_x + G_Rocket.vel_x*dt
     local goal_y = G_Rocket.pos_y + G_Rocket.vel_y*dt
 
+	-- Collisions
     local actualX, actualY, cols, len = G_world:move(G_rocketCollision, goal_x, goal_y)
 
     G_Rocket.pos_x = actualX
@@ -84,10 +95,12 @@ function love.update(dt)
         G_Rocket.vel_y = 0
     end
 
+	-- Friction
     if G_Rocket.pos_y == G_StartHeight then
         G_Rocket.vel_x = G_Rocket.vel_x * 0.95
     end
 
+	-- Wrap around horizontally
     if G_Rocket.pos_x > G_ScreenWidth + G_RocketWidth then
         G_Rocket.pos_x = -G_RocketWidth
         G_world:update(G_rocketCollision, G_Rocket.pos_x, G_Rocket.pos_y)
